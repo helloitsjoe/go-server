@@ -15,11 +15,6 @@ import (
 // status codes
 // post body
 
-type BasicPostBody struct {
-	name string
-	age  int
-}
-
 func home(c *gin.Context) {
 	c.File("index.html")
 }
@@ -35,13 +30,18 @@ func getUser(c *gin.Context) {
 	c.String(http.StatusOK, "Hello %s", id)
 }
 
+type BasicPostBody struct {
+	// Fields must be exported (capitalized)
+	Name string
+	Age  int
+}
+
 func postData(c *gin.Context) {
-	// Why doesn't this work? Getting a 200 response with empty body
 	var body BasicPostBody
-	if err := c.BindJSON(&body); err != nil {
+	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
 	}
-	fmt.Println(body)
 	c.JSON(http.StatusOK, body)
 }
 

@@ -4,7 +4,47 @@
   </head>
   <body>
     <h1>
-      Hello!
+      Hello! Register below
     </h1>
+    <form id="form">
+    <label>
+      Name
+      <input type="text" name="name" />
+    </label>
+    <label>
+      Age
+      <input type="number" name="age" />
+    </label>
+    <button type="submit">
+      Submit
+    </button>
+    </form>
+    <div id="response"></div>
+    <script>
+      const form = document.getElementById('form');
+
+      form.onsubmit = handleSubmit
+
+      function handleSubmit(e) {
+        e.preventDefault();
+        const {name, age} = Object.fromEntries(new FormData(e.target))
+        fetch('/data', {
+          method: 'POST',
+          body: JSON.stringify({name, age: Number(age)}),
+          headers: {'Content-Type': 'application/json'}
+        }).then((res) => {
+          if (!res.ok) {
+            throw new Error(res.status);
+          }
+          return res.json()
+        }).then((json) => {
+          console.log(json);
+          document.getElementById('response').innerHTML = `<pre>${JSON.stringify(json)}</pre>`
+        }).catch((err) => {
+          document.getElementById('response').innerHTML = `<div>${err.message}</pre>`
+
+        });
+      }
+    </script>
   </body>
 </html>
