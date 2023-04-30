@@ -15,8 +15,13 @@ import (
 // status codes
 // post body
 
-func home() {
-	// TODO: Serve HTML
+type BasicPostBody struct {
+	name string
+	age  int
+}
+
+func home(c *gin.Context) {
+	c.File("index.html")
 }
 
 func pong(c *gin.Context) {
@@ -30,10 +35,22 @@ func getUser(c *gin.Context) {
 	c.String(http.StatusOK, "Hello %s", id)
 }
 
+func postData(c *gin.Context) {
+	// Why doesn't this work? Getting a 200 response with empty body
+	var body BasicPostBody
+	if err := c.BindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	}
+	fmt.Println(body)
+	c.JSON(http.StatusOK, body)
+}
+
 func main() {
 	router := gin.Default()
+	router.GET("/", home)
 	router.GET("/ping", pong)
 	router.GET("/user/:id", getUser)
+	router.POST("/data", postData)
 	fmt.Println("Listening on http://localhost:8080")
 	router.Run()
 }
