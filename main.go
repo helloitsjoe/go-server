@@ -33,13 +33,13 @@ func getUser(c *gin.Context) {
 type BasicPostBody struct {
 	// Fields must be exported (capitalized)
 	Name string
-	Age  int
+	Age  int `binding:"required"`
 }
 
 func postData(c *gin.Context) {
 	var body BasicPostBody
 	if err := c.ShouldBindJSON(&body); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, body)
