@@ -7,13 +7,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// query params
-// sub routes
-// headers
 // middleware/auth
 // cors
-// status codes
-// post body
 
 func home(c *gin.Context) {
 	c.File("index.html")
@@ -27,13 +22,14 @@ func pong(c *gin.Context) {
 
 func getUser(c *gin.Context) {
 	id := c.Param("id")
-	c.String(http.StatusOK, "Hello %s", id)
+	foo := c.GetHeader("X-Foo")
+	c.Header("X-Foo-Response", foo)
+	c.String(http.StatusOK, "Hello %s %s", id, foo)
 }
 
 type BasicPostBody struct {
-	// Fields must be exported (capitalized)
-	Name string
-	Age  int `binding:"required"`
+	Name string `json:"name" binding:"required,max=1000"`
+	Age  int    `json:"age" binding:"required,gte=1,lte=150"`
 }
 
 func postData(c *gin.Context) {
