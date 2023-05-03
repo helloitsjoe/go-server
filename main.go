@@ -3,12 +3,44 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 // middleware/auth
 // cors
+
+var allowedHeaders = []string{
+	"accept",
+	"origin",
+	"X-CSRF-Token",
+	"Authorization",
+	"Cache-Control",
+	"Content-Type",
+	"Content-Length",
+	"Accept-Encoding",
+	"X-Requested-With",
+}
+
+func middy(c *gin.Context) {
+	fmt.Println("Middleware!")
+	c.Next()
+}
+
+func myCors(c *gin.Context) {
+	c.Header("Access-Control-Allow-Origin", "http://localhost:8080")
+	c.Header("Access-Control-Allow-Methods", "GET,POST,OPTIONS")
+	c.Header("Access-Control-Allow-Headers", strings.Join(allowedHeaders, ","))
+	c.Header("Access-Control-Allow-Credentials", "true")
+
+	if c.Request.Method == "OPTIONS" {
+		c.AbortWithStatus(204)
+		return
+	}
+
+	c.Next()
+}
 
 func home(c *gin.Context) {
 	c.File("index.html")
@@ -43,6 +75,8 @@ func postData(c *gin.Context) {
 
 func main() {
 	router := gin.Default()
+	router.Use(middy)
+	router.Use(myCors)
 	router.GET("/", home)
 	router.GET("/ping", pong)
 	router.GET("/user/:id", getUser)

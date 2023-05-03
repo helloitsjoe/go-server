@@ -22,13 +22,14 @@
     <div id="response"></div>
     <script>
       const form = document.getElementById('form');
+      const HOST = 'http://localhost:8080';
 
       form.onsubmit = handleSubmit
 
       function handleSubmit(e) {
         e.preventDefault();
         const {name, age} = Object.fromEntries(new FormData(e.target))
-        fetch('/data', {
+        fetch(`${HOST}/data`, {
           method: 'POST',
           body: JSON.stringify({name, age: Number(age)}),
           headers: {'Content-Type': 'application/json'}
