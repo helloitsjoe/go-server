@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -28,19 +30,19 @@ func middy(c *gin.Context) {
 	c.Next()
 }
 
-func myCors(c *gin.Context) {
-	c.Header("Access-Control-Allow-Origin", "http://localhost:8080")
-	c.Header("Access-Control-Allow-Methods", "GET,POST,OPTIONS")
-	c.Header("Access-Control-Allow-Headers", strings.Join(allowedHeaders, ","))
-	c.Header("Access-Control-Allow-Credentials", "true")
+// func myCors(c *gin.Context) {
+// 	c.Header("Access-Control-Allow-Origin", "http://localhost:8080")
+// 	c.Header("Access-Control-Allow-Methods", "GET,POST,OPTIONS")
+// 	c.Header("Access-Control-Allow-Headers", strings.Join(allowedHeaders, ","))
+// 	c.Header("Access-Control-Allow-Credentials", "true")
 
-	if c.Request.Method == "OPTIONS" {
-		c.AbortWithStatus(204)
-		return
-	}
+// 	if c.Request.Method == "OPTIONS" {
+// 		c.AbortWithStatus(204)
+// 		return
+// 	}
 
-	c.Next()
-}
+// 	c.Next()
+// }
 
 func home(c *gin.Context) {
 	c.File("index.html")
@@ -76,7 +78,15 @@ func postData(c *gin.Context) {
 func main() {
 	router := gin.Default()
 	router.Use(middy)
-	router.Use(myCors)
+	// router.Use(myCors)
+	router.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:8080"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "OPTIONS"},
+		AllowHeaders:     []string{"Origin"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}))
 	router.GET("/", home)
 	router.GET("/ping", pong)
 	router.GET("/user/:id", getUser)
