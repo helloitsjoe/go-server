@@ -12,26 +12,31 @@
       <input type="text" name="name" />
     </label>
     <label>
-      Age
-      <input type="number" name="age" />
+      Password
+      <input type="password" name="password" />
     </label>
     <button type="submit">
       Submit
     </button>
     </form>
+    <button type="button" id="get-users">
+      Get all users
+    </button>
     <div id="response"></div>
     <script>
       const form = document.getElementById('form');
+      const getUsers = document.getElementById('get-users');
       const HOST = 'http://localhost:8080';
 
       form.onsubmit = handleSubmit
+      getUsers.onclick = getAllUsers
 
       function handleSubmit(e) {
         e.preventDefault();
-        const {name, age} = Object.fromEntries(new FormData(e.target))
-        fetch(`${HOST}/data`, {
+        const {name, password} = Object.fromEntries(new FormData(e.target))
+        fetch(`${HOST}/register`, {
           method: 'POST',
-          body: JSON.stringify({name, age: Number(age)}),
+          body: JSON.stringify({name, password}),
           headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer fake-auth-token'}
         }).then((res) => {
           if (!res.ok) {
@@ -43,8 +48,22 @@
           document.getElementById('response').innerHTML = `<pre>${JSON.stringify(json)}</pre>`
         }).catch((err) => {
           document.getElementById('response').innerHTML = `<div>${err.message}</pre>`
-
         });
+      }
+
+      function getAllUsers() {
+        fetch(`${HOST}/users`)
+          .then((res) => {
+            if (!res.ok) {
+              throw new Error(res.status);
+            }
+            return res.json()
+          }).then((json) => {
+            console.log(json);
+            document.getElementById('response').innerHTML = `<pre>${json}</pre>`
+          }).catch((err) => {
+            document.getElementById('response').innerHTML = `<div>${err.message}</pre>`
+          });
       }
     </script>
   </body>
