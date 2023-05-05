@@ -10,9 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// middleware/auth
-// cors
-
+var allowedMethods = []string{"GET", "POST", "PUT", "OPTIONS"}
 var allowedHeaders = []string{
 	"accept",
 	"origin",
@@ -25,24 +23,30 @@ var allowedHeaders = []string{
 	"X-Requested-With",
 }
 
-func middy(c *gin.Context) {
-	fmt.Println("Middleware!")
+func authMiddlware(c *gin.Context) {
+	token := strings.Replace(c.GetHeader("Authorization"), "Bearer ", "", 1)
+
+	if token != "fake-auth-token" {
+		fmt.Println("Not authorized!")
+		c.AbortWithStatus(http.StatusUnauthorized)
+	}
+	fmt.Println("Authorized!")
 	c.Next()
 }
 
-// func myCors(c *gin.Context) {
-// 	c.Header("Access-Control-Allow-Origin", "http://localhost:8080")
-// 	c.Header("Access-Control-Allow-Methods", "GET,POST,OPTIONS")
-// 	c.Header("Access-Control-Allow-Headers", strings.Join(allowedHeaders, ","))
-// 	c.Header("Access-Control-Allow-Credentials", "true")
+func myCors(c *gin.Context) {
+	c.Header("Access-Control-Allow-Origin", "http://localhost:8080")
+	c.Header("Access-Control-Allow-Methods", strings.Join(allowedMethods, ","))
+	c.Header("Access-Control-Allow-Headers", strings.Join(allowedHeaders, ","))
+	c.Header("Access-Control-Allow-Credentials", "true")
 
-// 	if c.Request.Method == "OPTIONS" {
-// 		c.AbortWithStatus(204)
-// 		return
-// 	}
+	if c.Request.Method == "OPTIONS" {
+		c.AbortWithStatus(204)
+		return
+	}
 
-// 	c.Next()
-// }
+	c.Next()
+}
 
 func home(c *gin.Context) {
 	c.File("index.html")
@@ -77,12 +81,11 @@ func postData(c *gin.Context) {
 
 func main() {
 	router := gin.Default()
-	router.Use(middy)
 	// router.Use(myCors)
 	router.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:8080"},
-		AllowMethods:     []string{"GET", "POST", "PUT", "OPTIONS"},
-		AllowHeaders:     []string{"Origin"},
+		AllowOrigins:     []string{"*"},
+		AllowMethods:     allowedMethods,
+		AllowHeaders:     allowedHeaders,
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
@@ -90,7 +93,7 @@ func main() {
 	router.GET("/", home)
 	router.GET("/ping", pong)
 	router.GET("/user/:id", getUser)
-	router.POST("/data", postData)
+	router.POST("/data", authMiddlware, postData)
 	fmt.Println("Listening on http://localhost:8080")
 	router.Run()
 }

@@ -32,7 +32,7 @@
         fetch(`${HOST}/data`, {
           method: 'POST',
           body: JSON.stringify({name, age: Number(age)}),
-          headers: {'Content-Type': 'application/json'}
+          headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer fake-auth-token'}
         }).then((res) => {
           if (!res.ok) {
             throw new Error(res.status);
