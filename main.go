@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"go_server/middleware"
+	"go_server/utils"
 	"net/http"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 )
 
 var inMemoryUsers = map[uuid.UUID]User{}
+var PORT = utils.GetEnv("PORT", "8080")
 
 func home(c *gin.Context) {
 	c.File("index.html")
@@ -63,6 +65,7 @@ func register(c *gin.Context) {
 
 func main() {
 	router := gin.Default()
+	router.SetTrustedProxies(nil)
 	// router.Use(myCors)
 	router.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"*"},
@@ -79,6 +82,6 @@ func main() {
 	// router.POST("/data", authMiddlware, postData)
 	router.POST("/register", register)
 	// router.POST("/login", login)
-	fmt.Println("Listening on http://localhost:8080")
-	router.Run()
+	fmt.Println("Listening on http://localhost:", PORT)
+	router.Run(fmt.Sprintf(":%s", PORT))
 }
