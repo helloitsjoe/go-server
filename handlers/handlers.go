@@ -18,6 +18,11 @@ type Handlers struct {
 	users map[uuid.UUID]User
 }
 
+func NewHandlers() *Handlers {
+	users := make(map[uuid.UUID]User)
+	return &Handlers{users}
+}
+
 func (h Handlers) Home(c *gin.Context) {
 	c.File("index.html")
 }
