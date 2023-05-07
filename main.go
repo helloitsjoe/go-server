@@ -27,6 +27,7 @@ func main() {
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
 	}))
+	router.Static("static", "./static")
 
 	router.GET("/", h.Home)
 	router.GET("/ping", h.Pong)
@@ -34,7 +35,8 @@ func main() {
 	router.GET("/users", h.GetAllUsers)
 	// router.POST("/data", authMiddlware, postData)
 	router.POST("/register", h.Register)
-	// router.POST("/login", h.Login)
+	router.GET("/login", h.LoginGet)
+	router.POST("/login", h.LoginPost)
 	fmt.Println("Listening on http://localhost:", PORT)
 	router.Run(fmt.Sprintf(":%s", PORT))
 }

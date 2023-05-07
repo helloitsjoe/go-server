@@ -22,12 +22,21 @@ var AllowedHeaders = []string{
 }
 
 func AuthMiddlware(c *gin.Context) {
-	token := strings.Replace(c.GetHeader("Authorization"), "Bearer ", "", 1)
+	// token := strings.Replace(c.GetHeader("Authorization"), "Bearer ", "", 1)
+
+	token, err := c.Cookie("token")
+	if err != nil {
+		fmt.Println(err)
+		c.AbortWithStatus(http.StatusUnauthorized)
+	}
 
 	if token != "fake-auth-token" {
 		fmt.Println("Not authorized!")
 		c.AbortWithStatus(http.StatusUnauthorized)
 	}
+
+	c.Set("token", token)
+
 	fmt.Println("Authorized!")
 	c.Next()
 }

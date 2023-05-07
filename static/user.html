@@ -1,0 +1,15 @@
+<html>
+  <head>
+    <title>...</title>
+  </head>
+  <body>
+    <h1 id="greeting">
+      Loading...
+    </h1>
+    <script>
+      const name = window.location.pathname.split('/').at(-1);
+      document.getElementById('greeting').innerHTML = `Welcome, ${name}!`;
+      document.title = name;
+    </script>
+  </body>
+</html>

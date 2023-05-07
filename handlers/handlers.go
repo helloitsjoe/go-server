@@ -24,20 +24,23 @@ func NewHandlers() *Handlers {
 }
 
 func (h Handlers) Home(c *gin.Context) {
-	c.File("index.html")
+	c.File("static/index.html")
 }
 
 func (h Handlers) Pong(c *gin.Context) {
+	foo := c.GetHeader("X-Foo")
+	c.Header("X-Foo-Response", foo)
 	c.JSON(http.StatusOK, gin.H{
 		"message": "pong",
 	})
 }
 
 func (h Handlers) GetUser(c *gin.Context) {
-	id := c.Param("id")
-	foo := c.GetHeader("X-Foo")
-	c.Header("X-Foo-Response", foo)
-	c.String(http.StatusOK, "Hello %s %s", id, foo)
+	if c.GetString("token") == "" {
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+	c.File("static/user.html")
 }
 
 func (h Handlers) GetAllUsers(c *gin.Context) {
@@ -62,4 +65,37 @@ func (h Handlers) Register(c *gin.Context) {
 	id := uuid.New()
 	h.users[id] = User{body.Name, body.Password}
 	c.JSON(http.StatusOK, gin.H{"name": body.Name, "password": body.Password, "id": id})
+}
+
+func (h Handlers) LoginGet(c *gin.Context) {
+	c.File("static/login.html")
+}
+
+func (h Handlers) LoginPost(c *gin.Context) {
+	var body User
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
+		return
+	}
+
+	var foundUser User
+	for _, user := range h.users {
+		if user.Name == body.Name {
+			foundUser = user
+		}
+	}
+
+	if foundUser == (User{}) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	if foundUser.Password != body.Password {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Not authorized"})
+		return
+	}
+
+	c.SetCookie("token", "fake-auth-token", 1000*60*60, "/", "http://localhost:8080", true, true)
+
+	c.JSON(http.StatusOK, gin.H{"name": foundUser.Name})
 }
