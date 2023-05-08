@@ -37,6 +37,6 @@ func main() {
 	router.POST("/register", h.Register)
 	router.GET("/login", h.LoginGet)
 	router.POST("/login", h.LoginPost)
-	fmt.Println("Listening on http://localhost:", PORT)
+	fmt.Printf("Listening on http://localhost:%s\n", PORT)
 	router.Run(fmt.Sprintf(":%s", PORT))
 }
