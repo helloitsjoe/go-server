@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	// "github.com/golang-jwt/jwt/v5"
+	"go_server/utils"
 )
 
 var AllowedMethods = []string{"GET", "POST", "PUT", "OPTIONS"}
@@ -25,18 +25,20 @@ var AllowedHeaders = []string{
 func AuthMiddlware(c *gin.Context) {
 	// token := strings.Replace(c.GetHeader("Authorization"), "Bearer ", "", 1)
 
-	token, err := c.Cookie("token")
+	cookieToken, err := c.Cookie("token")
 	if err != nil {
 		fmt.Println(err)
 		c.AbortWithStatus(http.StatusUnauthorized)
 	}
 
-	if token != "fake-auth-token" {
-		fmt.Println("Not authorized!")
+	validatedToken, err := utils.ValidateToken(cookieToken)
+	if err != nil {
+		fmt.Println("Not authorized!", err)
 		c.AbortWithStatus(http.StatusUnauthorized)
+		return
 	}
 
-	c.Set("token", token)
+	c.Set("token", validatedToken)
 
 	fmt.Println("Authorized!")
 	c.Next()

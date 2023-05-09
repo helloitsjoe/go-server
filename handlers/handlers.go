@@ -2,16 +2,12 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	"go_server/utils"
 )
-
-var secretKey = []byte("TopSecret")
 
 type User struct {
 	Name     string `json:"name" binding:"required,max=1000"`
@@ -21,25 +17,6 @@ type User struct {
 
 type Handlers struct {
 	users map[uuid.UUID]User
-}
-
-func generateToken(username string) (string, error) {
-	token := jwt.New(jwt.SigningMethodHS256)
-	fmt.Printf("Token: %v\n", token)
-
-	claims := token.Claims.(jwt.MapClaims)
-	claims["exp"] = time.Now().Add(10 * time.Minute)
-	claims["authorized"] = true
-	claims["user"] = "username"
-
-	tokenString, err := token.SignedString(secretKey)
-	if err != nil {
-		fmt.Println("Error: ", err)
-		return "", err
-	}
-
-	fmt.Println("Token string", tokenString)
-	return tokenString, nil
 }
 
 func NewHandlers() *Handlers {
@@ -119,7 +96,7 @@ func (h Handlers) LoginPost(c *gin.Context) {
 		return
 	}
 
-	token, err := generateToken(foundUser.Name)
+	token, err := utils.GenerateToken(foundUser.Name)
 	if err != nil {
 		c.AbortWithStatus(500)
 		return
