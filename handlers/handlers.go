@@ -4,9 +4,10 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"go_server/utils"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"go_server/utils"
 )
 
 type User struct {
