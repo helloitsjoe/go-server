@@ -63,7 +63,7 @@
             return res.json()
           }).then((json) => {
             console.log(json);
-            document.getElementById('response').innerHTML = `<pre>${json}</pre>`
+            document.getElementById('response').innerHTML = `<pre>${JSON.stringify(json)}</pre>`
           }).catch((err) => {
             document.getElementById('response').innerHTML = `<div>${err.message}</pre>`
           });

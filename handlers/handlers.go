@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"go_server/utils"
@@ -50,11 +49,12 @@ func (h Handlers) GetAllUsers(c *gin.Context) {
 	for _, v := range h.users {
 		usersArr = append(usersArr, v)
 	}
-	jsonUsers, err := json.Marshal(usersArr)
-	if err != nil {
-		c.AbortWithStatus(500)
-	}
-	c.JSON(http.StatusOK, string(jsonUsers))
+	// jsonUsers, err := json.Marshal(usersArr)
+	// if err != nil {
+	// 	c.AbortWithStatus(500)
+	// }
+	// c.JSON(http.StatusOK, string(jsonUsers))
+	c.JSON(http.StatusOK, usersArr)
 }
 
 func (h Handlers) Register(c *gin.Context) {
