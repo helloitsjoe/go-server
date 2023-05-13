@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type User struct {
@@ -23,10 +24,21 @@ type Handlers struct {
 	users UserMap
 }
 
+func hashPassword(password string) (string, error) {
+	hashed, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
+	return string(hashed), err
+}
+
 func (h *Handlers) SeedUsers(users UserMap) {
 	if users != nil {
-
-		h.users = users
+		for _, user := range users {
+			password, err := hashPassword(user.Password)
+			if err != nil {
+				panic(err)
+			}
+			user.Password = password
+			h.users[user.Id] = user
+		}
 	} else {
 		h.users = UserMap{}
 	}
@@ -57,10 +69,15 @@ func (h Handlers) GetUser(c *gin.Context) {
 	c.File("static/user.html")
 }
 
+type UserResponse struct {
+	Name string    `json:"name"`
+	Id   uuid.UUID `json:"id"`
+}
+
 func (h Handlers) GetAllUsers(c *gin.Context) {
-	usersArr := []User{}
+	usersArr := []UserResponse{}
 	for _, v := range h.users {
-		usersArr = append(usersArr, v)
+		usersArr = append(usersArr, UserResponse{v.Name, v.Id})
 	}
 	c.JSON(http.StatusOK, usersArr)
 }
@@ -73,10 +90,15 @@ func (h Handlers) Register(c *gin.Context) {
 	}
 
 	id := uuid.New()
-	// TODO: Hash password
-	h.users[id] = User{body.Name, body.Password, id}
+	hashedPass, err := hashPassword(body.Password)
+	if err != nil {
+		c.AbortWithStatus(500)
+	}
+
+	fmt.Println(hashedPass)
+	h.users[id] = User{body.Name, string(hashedPass), id}
 	fmt.Println("register", h.users)
-	c.JSON(http.StatusOK, gin.H{"name": body.Name, "password": body.Password, "id": id})
+	c.JSON(http.StatusOK, gin.H{"name": body.Name, "id": id})
 }
 
 func (h Handlers) LoginGet(c *gin.Context) {
@@ -102,7 +124,8 @@ func (h Handlers) LoginPost(c *gin.Context) {
 		return
 	}
 
-	if foundUser.Password != body.Password {
+	err := bcrypt.CompareHashAndPassword([]byte(foundUser.Password), []byte(body.Password))
+	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Not authorized"})
 		return
 	}

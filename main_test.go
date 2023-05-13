@@ -39,25 +39,33 @@ func TestHome(t *testing.T) {
 	assert.True(t, strings.Contains(w.Body.String(), "<title>Go Server</title>"))
 }
 
-type User struct {
-	Name     string
-	Password string
-	Id       uuid.UUID
-}
-
 func TestRegister(t *testing.T) {
 	reader := bytes.NewReader([]byte(`{"Name": "foo", "Password": "bar"}`))
 	w := makeRequest(http.MethodPost, "/register", reader, nil)
 
-	var dat User
+	var dat handlers.UserResponse
 	err := json.Unmarshal(w.Body.Bytes(), &dat)
 	if err != nil {
-		t.Log("error", err)
+		t.Fatal(err)
 	}
+
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Equal(t, dat.Name, "foo")
-	assert.Equal(t, dat.Password, "bar")
 	assert.IsType(t, "string", dat.Id.String())
+}
+
+func TestLoginPost(t *testing.T) {
+	id := uuid.New()
+	seedUsers := handlers.UserMap{}
+	seedUsers[id] = handlers.User{Name: "foo", Password: "bar", Id: id}
+	reader := bytes.NewReader([]byte(`{"Name": "foo", "Password": "bar"}`))
+
+	w := makeRequest(http.MethodPost, "/login", reader, seedUsers)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, `{"name":"foo"}`, w.Body.String())
+	// At least check that a cookie is set
+	assert.IsType(t, "string", w.Result().Cookies()[0].Value)
 }
 
 func TestUsers(t *testing.T) {
@@ -67,5 +75,5 @@ func TestUsers(t *testing.T) {
 	w := makeRequest(http.MethodGet, "/users", nil, seedUsers)
 
 	assert.Equal(t, http.StatusOK, w.Code)
-	assert.Equal(t, fmt.Sprintf(`[{"name":"foo","password":"bar","id":"%s"}]`, id), w.Body.String())
+	assert.Equal(t, fmt.Sprintf(`[{"name":"foo","id":"%s"}]`, id), w.Body.String())
 }
