@@ -13,8 +13,10 @@ import (
 
 var PORT = utils.GetEnv("PORT", "8080")
 
-func setupRouter() *gin.Engine {
+func setupRouter(usersSeed handlers.UserMap) *gin.Engine {
 	h := handlers.NewHandlers()
+
+	h.SeedUsers(usersSeed)
 
 	router := gin.Default()
 	router.SetTrustedProxies(nil)
@@ -42,7 +44,7 @@ func setupRouter() *gin.Engine {
 }
 
 func main() {
-	r := setupRouter()
+	r := setupRouter(nil)
 	fmt.Printf("Listening on http://localhost:%s\n", PORT)
 	r.Run(fmt.Sprintf(":%s", PORT))
 }

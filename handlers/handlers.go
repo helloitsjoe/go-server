@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 
 	"go_server/utils"
@@ -10,13 +11,25 @@ import (
 )
 
 type User struct {
-	Name     string `json:"name" binding:"required,max=1000"`
-	Password string `json:"password" binding:"required"`
+	Name     string    `json:"name" binding:"required,max=1000"`
+	Password string    `json:"password" binding:"required"`
+	Id       uuid.UUID `json:"id"`
 	// Age      int    `json:"age" binding:"required,gte=1,lte=150"`
 }
 
+type UserMap map[uuid.UUID]User
+
 type Handlers struct {
-	users map[uuid.UUID]User
+	users UserMap
+}
+
+func (h *Handlers) SeedUsers(users UserMap) {
+	if users != nil {
+
+		h.users = users
+	} else {
+		h.users = UserMap{}
+	}
 }
 
 func NewHandlers() *Handlers {
@@ -49,11 +62,6 @@ func (h Handlers) GetAllUsers(c *gin.Context) {
 	for _, v := range h.users {
 		usersArr = append(usersArr, v)
 	}
-	// jsonUsers, err := json.Marshal(usersArr)
-	// if err != nil {
-	// 	c.AbortWithStatus(500)
-	// }
-	// c.JSON(http.StatusOK, string(jsonUsers))
 	c.JSON(http.StatusOK, usersArr)
 }
 
@@ -65,7 +73,9 @@ func (h Handlers) Register(c *gin.Context) {
 	}
 
 	id := uuid.New()
-	h.users[id] = User{body.Name, body.Password}
+	// TODO: Hash password
+	h.users[id] = User{body.Name, body.Password, id}
+	fmt.Println("register", h.users)
 	c.JSON(http.StatusOK, gin.H{"name": body.Name, "password": body.Password, "id": id})
 }
 
