@@ -54,18 +54,55 @@ func TestRegister(t *testing.T) {
 	assert.IsType(t, "string", dat.Id.String())
 }
 
-func TestLoginPost(t *testing.T) {
+func TestLoginPostSuccess(t *testing.T) {
 	id := uuid.New()
 	seedUsers := handlers.UserMap{}
 	seedUsers[id] = handlers.User{Name: "foo", Password: "bar", Id: id}
 	reader := bytes.NewReader([]byte(`{"Name": "foo", "Password": "bar"}`))
 
 	w := makeRequest(http.MethodPost, "/login", reader, seedUsers)
+	cookie := w.Result().Cookies()[0]
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Equal(t, `{"name":"foo"}`, w.Body.String())
-	// At least check that a cookie is set
-	assert.IsType(t, "string", w.Result().Cookies()[0].Value)
+	assert.IsType(t, "string", cookie.Value)
+	assert.Equal(t, true, cookie.HttpOnly)
+	assert.Equal(t, true, cookie.Secure)
+	// assert.Equal(t, "http://localhost:8080", cookie.Domain)
+}
+
+func TestLoginPostUnauthorized(t *testing.T) {
+	id := uuid.New()
+	seedUsers := handlers.UserMap{}
+	seedUsers[id] = handlers.User{Name: "foo", Password: "bar", Id: id}
+	reader := bytes.NewReader([]byte(`{"Name": "foo", "Password": "not-bar"}`))
+
+	w := makeRequest(http.MethodPost, "/login", reader, seedUsers)
+
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+}
+
+func TestLoginPostNoPassword(t *testing.T) {
+	reader := bytes.NewReader([]byte(`{"Name": "foo"}`))
+	w := makeRequest(http.MethodPost, "/login", reader, nil)
+	assert.Equal(t, http.StatusUnprocessableEntity, w.Code)
+}
+
+func TestLoginPostNoName(t *testing.T) {
+	reader := bytes.NewReader([]byte(`{"Password": "foo"}`))
+	w := makeRequest(http.MethodPost, "/login", reader, nil)
+	assert.Equal(t, http.StatusUnprocessableEntity, w.Code)
+}
+
+func TestLoginPostEmpty(t *testing.T) {
+	w := makeRequest(http.MethodPost, "/login", nil, nil)
+	assert.Equal(t, http.StatusUnprocessableEntity, w.Code)
+}
+
+func TestLoginPostNoUser(t *testing.T) {
+	reader := bytes.NewReader([]byte(`{"Name": "bar", "Password": "foo"}`))
+	w := makeRequest(http.MethodPost, "/login", reader, nil)
+	assert.Equal(t, http.StatusNotFound, w.Code)
 }
 
 func TestUsers(t *testing.T) {
