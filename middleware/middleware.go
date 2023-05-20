@@ -5,8 +5,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/gin-gonic/gin"
 	"go_server/utils"
+
+	"github.com/gin-gonic/gin"
 )
 
 var AllowedMethods = []string{"GET", "POST", "PUT", "OPTIONS"}
@@ -26,9 +27,11 @@ func AuthMiddlware(c *gin.Context) {
 	// token := strings.Replace(c.GetHeader("Authorization"), "Bearer ", "", 1)
 
 	cookieToken, err := c.Cookie("token")
-	if err != nil {
+
+	if cookieToken == "" || err != nil {
 		fmt.Println(err)
 		c.AbortWithStatus(http.StatusUnauthorized)
+		return
 	}
 
 	validatedToken, err := utils.ValidateToken(cookieToken)
