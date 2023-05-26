@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"go_server/handlers"
 	"go_server/utils"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -16,28 +15,26 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func makeRequest(method string, url string, body io.Reader, seedUsers handlers.UserMap, token string) *httptest.ResponseRecorder {
+func makeRequest(req *http.Request, seedUsers handlers.UserMap) *httptest.ResponseRecorder {
 	r := setupRouter(seedUsers)
 
 	w := httptest.NewRecorder()
-	// TODO: Pass in request instead of method, url, body? Would this let me add a cookie to the request?
-	req, _ := http.NewRequest(method, url, body)
-	c := http.Cookie{Name: "token", Value: token}
-	req.AddCookie(&c)
 	r.ServeHTTP(w, req)
 
 	return w
 }
 
 func TestPing(t *testing.T) {
-	w := makeRequest(http.MethodGet, "/ping", nil, nil, "")
+	req, _ := http.NewRequest(http.MethodGet, "/ping", nil)
+	w := makeRequest(req, nil)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Equal(t, `{"message":"pong"}`, w.Body.String())
 }
 
 func TestHome(t *testing.T) {
-	w := makeRequest(http.MethodGet, "/", nil, nil, "")
+	req, _ := http.NewRequest(http.MethodGet, "/", nil)
+	w := makeRequest(req, nil)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.True(t, strings.Contains(w.Body.String(), "<title>Go Server</title>"))
@@ -45,7 +42,8 @@ func TestHome(t *testing.T) {
 
 func TestRegister(t *testing.T) {
 	reader := bytes.NewReader([]byte(`{"Name": "foo", "Password": "bar"}`))
-	w := makeRequest(http.MethodPost, "/register", reader, nil, "")
+	req, _ := http.NewRequest(http.MethodPost, "/register", reader)
+	w := makeRequest(req, nil)
 
 	var dat handlers.UserResponse
 	err := json.Unmarshal(w.Body.Bytes(), &dat)
@@ -62,7 +60,8 @@ func TestUsers(t *testing.T) {
 	id := uuid.New()
 	seedUsers := handlers.UserMap{}
 	seedUsers[id] = handlers.User{Name: "foo", Password: "bar", Id: id}
-	w := makeRequest(http.MethodGet, "/users", nil, seedUsers, "")
+	req, _ := http.NewRequest(http.MethodGet, "/users", nil)
+	w := makeRequest(req, seedUsers)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Equal(t, fmt.Sprintf(`[{"name":"foo","id":"%s"}]`, id), w.Body.String())
@@ -73,7 +72,9 @@ func TestUser(t *testing.T) {
 	seedUsers := handlers.UserMap{}
 	seedUsers[id] = handlers.User{Name: "foo", Password: "bar", Id: id}
 	token, _ := utils.GenerateToken(seedUsers[id].Name)
-	w := makeRequest(http.MethodGet, "/user/foo", nil, seedUsers, token)
+	req, _ := http.NewRequest(http.MethodGet, "/user/foo", nil)
+	req.AddCookie(&http.Cookie{Name: "token", Value: token})
+	w := makeRequest(req, nil)
 
 	t.Log(w.Body.String())
 
@@ -89,7 +90,8 @@ func TestLoginPostSuccess(t *testing.T) {
 	seedUsers[id] = handlers.User{Name: "foo", Password: "bar", Id: id}
 	reader := bytes.NewReader([]byte(`{"Name": "foo", "Password": "bar"}`))
 
-	w := makeRequest(http.MethodPost, "/login", reader, seedUsers, "")
+	req, _ := http.NewRequest(http.MethodPost, "/login", reader)
+	w := makeRequest(req, seedUsers)
 	cookie := w.Result().Cookies()[0]
 
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -106,30 +108,35 @@ func TestLoginPostUnauthorized(t *testing.T) {
 	seedUsers[id] = handlers.User{Name: "foo", Password: "bar", Id: id}
 	reader := bytes.NewReader([]byte(`{"Name": "foo", "Password": "not-bar"}`))
 
-	w := makeRequest(http.MethodPost, "/login", reader, seedUsers, "")
+	req, _ := http.NewRequest(http.MethodPost, "/login", reader)
+	w := makeRequest(req, seedUsers)
 
 	assert.Equal(t, http.StatusUnauthorized, w.Code)
 }
 
 func TestLoginPostNoPassword(t *testing.T) {
 	reader := bytes.NewReader([]byte(`{"Name": "foo"}`))
-	w := makeRequest(http.MethodPost, "/login", reader, nil, "")
+	req, _ := http.NewRequest(http.MethodPost, "/login", reader)
+	w := makeRequest(req, nil)
 	assert.Equal(t, http.StatusUnprocessableEntity, w.Code)
 }
 
 func TestLoginPostNoName(t *testing.T) {
 	reader := bytes.NewReader([]byte(`{"Password": "foo"}`))
-	w := makeRequest(http.MethodPost, "/login", reader, nil, "")
+	req, _ := http.NewRequest(http.MethodPost, "/login", reader)
+	w := makeRequest(req, nil)
 	assert.Equal(t, http.StatusUnprocessableEntity, w.Code)
 }
 
 func TestLoginPostEmpty(t *testing.T) {
-	w := makeRequest(http.MethodPost, "/login", nil, nil, "")
+	req, _ := http.NewRequest(http.MethodPost, "/login", nil)
+	w := makeRequest(req, nil)
 	assert.Equal(t, http.StatusUnprocessableEntity, w.Code)
 }
 
 func TestLoginPostNoUser(t *testing.T) {
 	reader := bytes.NewReader([]byte(`{"Name": "bar", "Password": "foo"}`))
-	w := makeRequest(http.MethodPost, "/login", reader, nil, "")
+	req, _ := http.NewRequest(http.MethodPost, "/login", reader)
+	w := makeRequest(req, nil)
 	assert.Equal(t, http.StatusNotFound, w.Code)
 }
