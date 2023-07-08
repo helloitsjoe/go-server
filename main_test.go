@@ -16,7 +16,7 @@ import (
 )
 
 func makeRequest(req *http.Request, seedUsers handlers.UserMap) *httptest.ResponseRecorder {
-	r := setupRouter(seedUsers)
+	r := setupRouter(seedUsers, true)
 
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)

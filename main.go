@@ -5,6 +5,7 @@ import (
 	"go_server/handlers"
 	"go_server/middleware"
 	"go_server/utils"
+	"io/ioutil"
 	"time"
 
 	"github.com/gin-contrib/cors"
@@ -13,12 +14,17 @@ import (
 
 var PORT = utils.GetEnv("PORT", "8080")
 
-func setupRouter(usersSeed handlers.UserMap) *gin.Engine {
+func setupRouter(usersSeed handlers.UserMap, disableLogs bool) *gin.Engine {
 	h := handlers.NewHandlers()
 
 	h.SeedUsers(usersSeed)
 
 	router := gin.Default()
+
+	if disableLogs {
+		gin.DefaultWriter = ioutil.Discard
+	}
+
 	router.SetTrustedProxies(nil)
 	// router.Use(middleware.MyCors)
 	router.Use(cors.New(cors.Config{
@@ -44,7 +50,7 @@ func setupRouter(usersSeed handlers.UserMap) *gin.Engine {
 }
 
 func main() {
-	r := setupRouter(nil)
+	r := setupRouter(nil, false)
 	fmt.Printf("Listening on http://localhost:%s\n", PORT)
 	r.Run(fmt.Sprintf(":%s", PORT))
 }
